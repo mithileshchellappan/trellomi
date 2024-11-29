@@ -34,9 +34,13 @@ async function generateChatCompletion(transcript, aiSummary, tasks) {
                   listId: {
                     type: "string",
                     description: "The ID of the destination list"
+                  },
+                  comment: {
+                    type: "string",
+                    description: "A brief explanation of why the card is being moved, based on the transcript"
                   }
                 },
-                required: ["cardId", "boardId", "listId"]
+                required: ["cardId", "boardId", "listId", "comment"]
               }
             }
           },
@@ -60,6 +64,10 @@ async function generateChatCompletion(transcript, aiSummary, tasks) {
                     type: "string",
                     description: "The name of the card to create"
                   },
+                  description: {
+                    type: "string",
+                    description: "A detailed description for the card, based on the context from the transcript"
+                  },
                   boardId: {
                     type: "string",
                     description: "The ID of the board to create the card on"
@@ -69,7 +77,7 @@ async function generateChatCompletion(transcript, aiSummary, tasks) {
                     description: "The ID of the list to create the card on"
                   }
                 },
-                required: ["name", "boardId", "listId"]
+                required: ["name", "description", "boardId", "listId"]
               }
             }
           },

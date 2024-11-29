@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Completed</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #ffffff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        .message {
+            font-size: 1rem;
+            color: #666666;
+            margin-bottom: 2rem;
+        }
+
+        .info-box {
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            fill: #6b7280;
+        }
+
+        .info-text {
+            color: #374151;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .error {
+            color: #dc2626;
+            margin: 1rem 0;
+            display: none;
+            background-color: #fee2e2;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/images/trellomi-logo.png" alt="Omi logo" class="icon">
+        <h1>Setup Completed</h1>
+        <p class="message">Your Trello account has been connected successfully!</p>
+        <p class="error" id="errorMessage"></p>
+        <div class="info-box">
+            <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"/>
+            </svg>
+            <p class="info-text">You can now close this tab and return to Omi App</p>
+        </div>
+    </div>
+
+    <script>
+        // Function to handle token storage
+        async function handleCallback() {
+            try {
+                const token = window.location.hash.split('=')[1];
+                const urlParams = new URLSearchParams(window.location.search);
+                const uid = urlParams.get('uid');
+                
+                if (!token || !uid) {
+                    throw new Error('Missing token or user ID');
+                }
+
+                // Store the token
+                const response = await fetch('/store-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token, uid })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to store token');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').textContent = error.message;
+                
+                // Store error URL for later use
+                const uid = new URLSearchParams(window.location.search).get('uid');
+                window.successUrl = `omi://callback?success=false&uid=${uid}&error=${encodeURIComponent(error.message)}`;
+            }
+        }
+        // Run when page loads
+        handleCallback();
+    </script>
+</body>
+</html> 

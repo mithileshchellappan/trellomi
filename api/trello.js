@@ -17,9 +17,8 @@ async function isTokenValid(token) {
 }
 
 // Create a new card
-async function createCard(userToken, { name, boardId, listId }, tasks) {
+async function createCard(userToken, { name, boardId, listId, description }, tasks) {
   try {
-    // Get board and list names from tasks data
     const board = tasks.boards.find(b => b.boardId === boardId);
     const list = board?.lists.find(l => l.listId === listId);
     const listName = list?.name || 'Unknown List';
@@ -30,7 +29,8 @@ async function createCard(userToken, { name, boardId, listId }, tasks) {
       {
         name,
         idBoard: boardId,
-        idList: listId
+        idList: listId,
+        desc: description || ''
       }
     );
 
@@ -52,14 +52,16 @@ async function createCard(userToken, { name, boardId, listId }, tasks) {
 }
 
 // Move a card to a different list
-async function moveCard(userToken, { cardId, boardId, listId }, tasks) {
+async function moveCard(userToken, { cardId, boardId, listId, comment }, tasks) {
   try {
     // Get board and list names from tasks data
+    console.log(tasks,boardId, listId,comment)
     const board = tasks.boards.find(b => b.boardId === boardId);
     const list = board?.lists.find(l => l.listId === listId);
     const listName = list?.name || 'Unknown List';
     const boardName = board?.name || 'Unknown Board';
 
+    // Move the card
     const response = await axios.put(
       `${TRELLO_BASE_URL}/cards/${cardId}?key=${TRELLO_KEY}&token=${userToken}`,
       {
@@ -67,6 +69,16 @@ async function moveCard(userToken, { cardId, boardId, listId }, tasks) {
         idBoard: boardId
       }
     );
+
+    // Add comment if provided
+    if (comment) {
+      await axios.post(
+        `${TRELLO_BASE_URL}/cards/${cardId}/actions/comments?key=${TRELLO_KEY}&token=${userToken}`,
+        {
+          text: `Trellomi: ${comment}`
+        }
+      );
+    }
 
     return {
       success: true,

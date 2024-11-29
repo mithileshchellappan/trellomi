@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 require('dotenv').config();
 const session = require('express-session');
 const { storeUserToken, getUserToken, isRequestProcessed, markRequestProcessed } = require('./db/database');
@@ -6,6 +7,9 @@ const { getTrelloTasks, generateAuthUrl, isTokenValid, moveCard, createCard } = 
 const { generateChatCompletion } = require('./api/openai');
 
 const app = express();
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -14,12 +18,16 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
+// Serve the login page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.get('/login', (req, res) => {
   const uid = req.query.uid;
   if (!uid) {
     return res.status(400).json({ error: 'User ID is required' });
   }
-  console.log(uid);
   
   req.session.uid = uid;
   const loginUrl = generateAuthUrl(uid);
@@ -27,33 +35,7 @@ app.get('/login', (req, res) => {
 });
 
 app.get('/callback', (req, res) => {
-  res.status(200).send(`
-    <script>
-      const token = window.location.hash.split('=')[1];
-      const urlParams = new URLSearchParams(window.location.search);
-      const uid = urlParams.get('uid');
-      
-      if (token) {
-        fetch('/store-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token, uid })
-        })
-        .then(response => response.json())
-        .then(data => {
-          document.body.innerHTML = 'Login successful! You can now access your boards.';
-        })
-        .catch(error => {
-          document.body.innerHTML = 'Authentication failed.';
-        });
-      } else {
-        document.body.innerHTML = 'Authentication failed.';
-      }
-    </script>
-    <body>Processing authentication...</body>
-  `);
+  res.sendFile(path.join(__dirname, 'public', 'success.html'));
 });
 
 app.post('/store-token', async (req, res) => {
@@ -76,20 +58,18 @@ app.post('/store-token', async (req, res) => {
 
 app.post('/webhook/memory', async (req, res) => {
   try {
-    const {uid} = req.query
+    const {uid} = req.query;
     const { structured: { title, overview }, transcript_segments, id } = req.body;
     
-    // Check if this request has already been processed
-    const isProcessed = await isRequestProcessed(id);
-    if (isProcessed) {
-      return res.json({
-        success: true,
-        message: 'Request already processed',
-        alreadyProcessed: true
-      });
-    }
+    // const isProcessed = await isRequestProcessed(id);
+    // if (isProcessed) {
+    //   return res.json({
+    //     success: true,
+    //     message: 'Request already processed',
+    //     alreadyProcessed: true
+    //   });
+    // }
 
-    // Mark the request as processed immediately to prevent duplicate processing
     await markRequestProcessed(id);
 
     const transcript = transcript_segments.map(segment => segment.text).join('\n');
@@ -126,17 +106,19 @@ app.post('/webhook/memory', async (req, res) => {
       created: []
     };
 
-    // Process card movements
+    // Process card movements with comments
     if (suggestion.moveDetails?.length > 0) {
       for (const moveDetail of suggestion.moveDetails) {
+        console.log(moveDetail)
         const result = await moveCard(userToken, moveDetail, tasks);
         changes.moved.push(result);
       }
     }
 
-    // Process card creations
+    // Process card creations with descriptions
     if (suggestion.createDetails?.length > 0) {
       for (const createDetail of suggestion.createDetails) {
+        console.log(createDetail)
         const result = await createCard(userToken, createDetail, tasks);
         changes.created.push(result);
       }
