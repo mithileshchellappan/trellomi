@@ -2,7 +2,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 const TRELLO_BASE_URL = 'https://api.trello.com/1';
-const { TRELLO_KEY } = process.env;
+const { TRELLO_KEY, TRELLO_APP_TOKEN } = process.env;
 
 // Check if token is valid by making a test API call
 async function isTokenValid(token) {
@@ -30,7 +30,7 @@ async function createCard(userToken, { name, boardId, listId, description }, tas
         name,
         idBoard: boardId,
         idList: listId,
-        desc: description || ''
+        desc: `Trellomi: ${description}` || ''
       }
     );
 
@@ -48,6 +48,23 @@ async function createCard(userToken, { name, boardId, listId, description }, tas
   } catch (error) {
     console.error('Error creating card:', error.message);
     throw new Error('Failed to create card');
+  }
+}
+
+// Add comment as Trellomi app
+async function addCommentAsApp(cardId, comment) {
+  try {
+    const response = await axios.post(
+      `${TRELLO_BASE_URL}/cards/${cardId}/actions/comments?key=${TRELLO_KEY}&token=${TRELLO_APP_TOKEN}`,
+      {
+        text: `Trellomi: ${comment}`
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error adding comment:', error.message);
+    // Don't throw error as comment is not critical
+    return null;
   }
 }
 
@@ -70,14 +87,9 @@ async function moveCard(userToken, { cardId, boardId, listId, comment }, tasks) 
       }
     );
 
-    // Add comment if provided
+    // Add comment if provided using app token
     if (comment) {
-      await axios.post(
-        `${TRELLO_BASE_URL}/cards/${cardId}/actions/comments?key=${TRELLO_KEY}&token=${userToken}`,
-        {
-          text: `Trellomi: ${comment}`
-        }
-      );
+      await addCommentAsApp(cardId, comment);
     }
 
     return {
@@ -187,5 +199,6 @@ module.exports = {
   generateAuthUrl,
   isTokenValid,
   moveCard,
-  createCard
+  createCard,
+  addCommentAsApp
 }; 

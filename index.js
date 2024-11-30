@@ -61,15 +61,17 @@ app.post('/webhook/memory', async (req, res) => {
     const {uid} = req.query;
     const { structured: { title, overview }, transcript_segments, id } = req.body;
     
-    // const isProcessed = await isRequestProcessed(id);
-    // if (isProcessed) {
-    //   return res.json({
-    //     success: true,
-    //     message: 'Request already processed',
-    //     alreadyProcessed: true
-    //   });
-    // }
-
+    const isProcessed = await isRequestProcessed(id);
+    if (isProcessed) {
+      return res.json({
+        success: true,
+        message: 'Request already processed',
+        alreadyProcessed: true
+      });
+    }
+    if(title.toLowerCase().includes('incomplete') || title.toLowerCase().includes('incomprehensible') || overview.toLowerCase().includes('incomplete') || overview.toLowerCase().includes('incomprehensible')){
+      return res.send('Incomplete or incomprehensible request. No changes were made.');
+    }
     await markRequestProcessed(id);
 
     const transcript = transcript_segments.map(segment => segment.text).join('\n');
@@ -93,10 +95,8 @@ app.post('/webhook/memory', async (req, res) => {
     if(title.length < 0 && overview.length < 0){
       return res.send('No changes were needed based on the conversation.');
     }
-    // Get AI suggestions for card movements and creation
     const suggestion = await generateChatCompletion(transcript, aiSummary, tasks);
 
-    // If no actions suggested, return early
     if (!suggestion.shouldMove && !suggestion.moveDetails?.length && !suggestion.createDetails?.length) {
       return res.send('No changes were needed based on the conversation.');
     }

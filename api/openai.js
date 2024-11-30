@@ -102,7 +102,7 @@ async function generateChatCompletion(transcript, aiSummary, tasks) {
    - Use clear, concise names for new cards
    - Only create cards for clearly defined tasks, not vague mentions
 
-3. If no changes are needed, just reply with "NO CHANGES STOP TRIGGERED"
+3. If no changes are needed, just reply with "NO CHANGES STOP TRIGGERED". You are not always required to make changes. If the user's request is vague or incomplete, you should not make any changes.
 
 The Trello data follows this schema:
 boards: [
