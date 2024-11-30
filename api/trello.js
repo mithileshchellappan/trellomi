@@ -191,7 +191,7 @@ function generateAuthUrl(uid) {
     `scope=read,write,account&` +
     `response_type=token&` +
     `key=${TRELLO_KEY}&` +
-    `return_url=http://192.168.0.150:3000/callback?uid=${uid}`;
+    `return_url=https://trellomi.notagodzilla.wtf/callback?uid=${uid}`;
 }
 
 module.exports = {
